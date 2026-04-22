@@ -339,6 +339,69 @@
 
   /* Loading */
   .loading {
+
+  /* Keynote results */
+  .keynote-results {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem;
+  }
+  .keynote-results-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 0.85rem 1.25rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .keynote-results-body { padding: 1.25rem; }
+  .keynote-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+  }
+  .keynote-bar-row:last-child { margin-bottom: 0; }
+  .keynote-bar-name {
+    min-width: 180px;
+    font-weight: 600;
+    font-size: 0.92rem;
+  }
+  .keynote-bar-track {
+    flex: 1;
+    height: 32px;
+    background: #ECEEF1;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .keynote-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.75rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--white);
+    transition: width 0.5s ease;
+    min-width: 40px;
+  }
+  .keynote-bar-fill.george { background: var(--navy); }
+  .keynote-bar-fill.tracy { background: var(--gold); }
+  .keynote-vote-count {
+    min-width: 70px;
+    text-align: right;
+    font-size: 0.85rem;
+    color: var(--slate);
+  }
+
+  /* Loading */
+  .loading {
     text-align: center;
     padding: 4rem 1rem;
     color: var(--slate);
@@ -510,6 +573,7 @@ async function loadData() {
     document.getElementById('reportContent').style.display = 'block';
     renderSummary(data);
     renderAggregate(data);
+    renderKeynote(data);
     renderIndividual(data);
   } catch (err) {
     document.getElementById('loadingState').innerHTML =
@@ -603,6 +667,52 @@ function renderAggregate(responses) {
   document.getElementById('aggregateView').innerHTML = html;
 }
 
+// ─── KEYNOTE RESULTS ───────────────────────────────────────────
+const KEYNOTE_LABELS = {
+  'george-carroll': 'George Carroll — GC Training & Coaching',
+  'tracy-latourrette': 'Tracy LaTourrette — "JackieO" Fighter Pilot'
+};
+
+function renderKeynote(responses) {
+  const counts = { 'george-carroll': 0, 'tracy-latourrette': 0 };
+  let total = 0;
+
+  responses.forEach(r => {
+    const pick = r.keynote_pick;
+    if (pick && counts.hasOwnProperty(pick)) {
+      counts[pick]++;
+      total++;
+    }
+  });
+
+  if (total === 0) return;
+
+  const gPct = Math.round((counts['george-carroll'] / total) * 100);
+  const tPct = Math.round((counts['tracy-latourrette'] / total) * 100);
+
+  const html = `<div class="keynote-results">
+    <div class="keynote-results-header">Keynote Speaker Preference</div>
+    <div class="keynote-results-body">
+      <div class="keynote-bar-row">
+        <div class="keynote-bar-name">George Carroll</div>
+        <div class="keynote-bar-track">
+          <div class="keynote-bar-fill george" style="width:${Math.max(gPct, 5)}%">${gPct}%</div>
+        </div>
+        <div class="keynote-vote-count">${counts['george-carroll']} vote${counts['george-carroll'] !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="keynote-bar-row">
+        <div class="keynote-bar-name">Tracy LaTourrette</div>
+        <div class="keynote-bar-track">
+          <div class="keynote-bar-fill tracy" style="width:${Math.max(tPct, 5)}%">${tPct}%</div>
+        </div>
+        <div class="keynote-vote-count">${counts['tracy-latourrette']} vote${counts['tracy-latourrette'] !== 1 ? 's' : ''}</div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('aggregateView').insertAdjacentHTML('beforeend', html);
+}
+
 // ─── INDIVIDUAL VIEW ───────────────────────────────────────────
 function renderIndividual(responses) {
   let html = '';
@@ -618,6 +728,13 @@ function renderIndividual(responses) {
         <span class="respondent-date">${date}</span>
       </div>
       <div class="respondent-body">`;
+
+    if (r.keynote_pick && KEYNOTE_LABELS[r.keynote_pick]) {
+      html += `<div class="respondent-category">
+        <h4>Keynote Speaker</h4>
+        <p style="font-size:0.85rem;">${KEYNOTE_LABELS[r.keynote_pick]}</p>
+      </div>`;
+    }
 
     Object.entries(SESSIONS).forEach(([category]) => {
       const catRankings = r.rankings?.[category];

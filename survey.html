@@ -413,6 +413,89 @@
     margin-bottom: 1rem;
   }
 
+  /* Keynote selection */
+  .keynote-section {
+    margin-bottom: 2.5rem;
+  }
+  .keynote-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .keynote-card {
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+  .keynote-card:hover {
+    border-color: var(--gold);
+    box-shadow: 0 2px 8px rgba(200,150,46,0.12);
+  }
+  .keynote-card.selected {
+    border-color: var(--gold);
+    background: var(--gold-light);
+    box-shadow: 0 2px 12px rgba(200,150,46,0.18);
+  }
+  .keynote-radio {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .keynote-card.selected .keynote-radio {
+    border-color: var(--gold);
+    background: var(--gold);
+  }
+  .keynote-radio::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--white);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .keynote-card.selected .keynote-radio::after { opacity: 1; }
+  .keynote-info { flex: 1; }
+  .keynote-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--navy);
+  }
+  .keynote-tagline {
+    font-size: 0.85rem;
+    color: var(--gold);
+    font-weight: 600;
+    margin-top: 0.1rem;
+  }
+  .keynote-desc {
+    font-size: 0.85rem;
+    color: var(--slate);
+    margin-top: 0.4rem;
+    line-height: 1.5;
+  }
+  .keynote-link {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.82rem;
+    color: var(--gold);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .keynote-link:hover { text-decoration: underline; }
+
   /* Responsive */
   @media (max-width: 600px) {
     .container { padding: 1rem; }
@@ -444,6 +527,35 @@
     </div>
 
     <div id="categoriesContainer"></div>
+
+    <!-- Keynote Speaker Selection -->
+    <div class="keynote-section">
+      <div class="category-header">
+        <h2>Keynote Speaker</h2>
+        <span class="category-count">2 candidates</span>
+      </div>
+      <p style="font-size:0.9rem; color:var(--slate); margin-bottom:0.85rem;">Select your preferred keynote speaker for the Denver conference. Click a card to choose.</p>
+      <div class="keynote-options" id="keynoteOptions">
+        <div class="keynote-card" data-keynote="george-carroll" onclick="selectKeynote(this)">
+          <div class="keynote-radio"></div>
+          <div class="keynote-info">
+            <div class="keynote-name">George Carroll</div>
+            <div class="keynote-tagline">GC Training &amp; Coaching · Motivational Keynote &amp; Leadership Trainer</div>
+            <div class="keynote-desc">High-energy keynote speaker and trainer with 20+ years of experience and 2,000+ sessions delivered. Signature topic: "Adaptability is the New Change" — combining neuroscience-based strategies with real-world tools for resilience, emotional intelligence, and peak performance. Clients include Abbott Laboratories, Providence Healthcare, McDonald's, and major banks.</div>
+            <a class="keynote-link" href="https://gctrainingandcoaching.com/core-programs" target="_blank" rel="noopener">View programs &amp; reviews →</a>
+          </div>
+        </div>
+        <div class="keynote-card" data-keynote="tracy-latourrette" onclick="selectKeynote(this)">
+          <div class="keynote-radio"></div>
+          <div class="keynote-info">
+            <div class="keynote-name">Tracy LaTourrette</div>
+            <div class="keynote-tagline">Colorado's First Lady Fighter Pilot · Callsign "JackieO"</div>
+            <div class="keynote-desc">Fighter pilot turned high-performance speaker, executive coach, and host of PBS's Emmy-nominated "Behind the Wings." Keynote theme: "Building Resilience to Perform in the Storm" — connecting air combat lessons to leadership, personal accountability, and team performance. Known for Top Gun-themed events that leave audiences fired up with actionable cockpit-to-boardroom tools.</div>
+            <a class="keynote-link" href="https://tracylatourrette.com/keynotes" target="_blank" rel="noopener">View keynotes &amp; media →</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="submit-section">
       <button class="submit-btn" id="submitBtn" onclick="submitRankings()">Submit Rankings</button>
@@ -718,12 +830,27 @@ function updateAllBadges() {
   });
 }
 
+// ─── KEYNOTE SELECTION ─────────────────────────────────────────
+let selectedKeynote = null;
+
+function selectKeynote(card) {
+  document.querySelectorAll('.keynote-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedKeynote = card.dataset.keynote;
+}
+
 // ─── SUBMIT ────────────────────────────────────────────────────
 async function submitRankings() {
   const name = document.getElementById('respondentName').value.trim();
   if (!name) {
     showStatus('Please enter your name before submitting.', 'error');
     document.getElementById('respondentName').focus();
+    return;
+  }
+
+  if (!selectedKeynote) {
+    showStatus('Please select a keynote speaker preference before submitting.', 'error');
+    document.querySelector('.keynote-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
@@ -742,6 +869,7 @@ async function submitRankings() {
   const payload = {
     respondent_name: name,
     rankings: rankings,
+    keynote_pick: selectedKeynote,
     submitted_at: new Date().toISOString()
   };
 
